@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  booking_service:
+    build: .
+    container_name: booking_service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - booking_db
+    environment:
+      - MONGO_URL=mongodb://booking_db:27017/booking_db
+    volumes:
+      - .:/app
+
+  booking_db:
+    image: mongo:6
+    container_name: booking_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data_booking:/data/db
+
+volumes:
+  mongo_data_booking:
