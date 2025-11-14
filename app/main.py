@@ -1,37 +1,33 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from . import models, schemas, crud, database
+from fastapi import FastAPI, HTTPException
+from . import crud, models
 
-app = FastAPI(title="EduPass Booking Microservice")
+app = FastAPI(title="EduPass Booking Microservice (MongoDB)")
 
-# создаем таблицы
-models.Base.metadata.create_all(bind=database.engine)
+@app.post("/bookings/", response_model=models.Booking)
+async def create_booking(booking: models.BookingCreate):
+    return await crud.create_booking(booking)
 
-@app.post("/bookings/", response_model=schemas.Booking)
-def create_booking(booking: schemas.BookingCreate, db: Session = Depends(database.get_db)):
-    return crud.create_booking(db, booking)
-
-@app.get("/bookings/{booking_id}", response_model=schemas.Booking)
-def read_booking(booking_id: int, db: Session = Depends(database.get_db)):
-    db_booking = crud.get_booking(db, booking_id)
-    if not db_booking:
+@app.get("/bookings/{booking_id}", response_model=models.Booking)
+async def read_booking(booking_id: str):
+    booking = await crud.get_booking(booking_id)
+    if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return db_booking
+    return booking
 
-@app.get("/bookings/", response_model=list[schemas.Booking])
-def list_bookings(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
-    return crud.get_bookings(db, skip, limit)
+@app.get("/bookings/", response_model=list[models.Booking])
+async def list_bookings():
+    return await crud.get_bookings()
 
-@app.put("/bookings/{booking_id}", response_model=schemas.Booking)
-def update_booking(booking_id: int, booking: schemas.BookingUpdate, db: Session = Depends(database.get_db)):
-    db_booking = crud.update_booking(db, booking_id, booking)
-    if not db_booking:
+@app.put("/bookings/{booking_id}", response_model=models.Booking)
+async def update_booking(booking_id: str, booking: models.BookingUpdate):
+    updated = await crud.update_booking(booking_id, booking)
+    if not updated:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return db_booking
+    return updated
 
-@app.delete("/bookings/{booking_id}", response_model=schemas.Booking)
-def delete_booking(booking_id: int, db: Session = Depends(database.get_db)):
-    db_booking = crud.delete_booking(db, booking_id)
-    if not db_booking:
+@app.delete("/bookings/{booking_id}", response_model=models.Booking)
+async def delete_booking(booking_id: str):
+    deleted = await crud.delete_booking(booking_id)
+    if not deleted:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return db_booking
+    return deleted
